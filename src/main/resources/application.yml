@@ -1,0 +1,46 @@
+#服务器设置
+server:
+  servlet:
+    context-path:
+  port: 80
+spring:
+  #数据源url
+  datasource:
+    url: jdbc:mysql:///dbsys?serverTimezone=GMT%2B8&characterEncoding=utf8
+    username: root
+    password: root
+  #视图模板前后缀
+  thymeleaf:
+    prefix: classpath:/templates/pages/
+    suffix: .html
+  #aop,不使用CGLib代理（继承代理类），使用JDK代理
+  aop:
+    proxy-target-class: false
+
+  task:
+    execution:
+      pool:
+        core-size: 10
+        max-size: 20
+        queue-capacity: 50
+        keep-alive: 60s
+        #allow-core-thread-timeout: true #允许核心线程超时
+        thread-name-prefix: dbpmx-service-
+
+#mybatis
+mybatis:
+  #连接超时配置
+  configuration:
+    default-statement-timeout: 60
+    #以驼峰规则命名表字段
+    map-underscore-to-camel-case: true
+  #映射文件配置
+  mapper-locations:
+    - classpath:/mapper/*/*.xml
+
+#lOG
+logging:
+  level:
+    com.cy: DEBUG
+  file:
+    path:

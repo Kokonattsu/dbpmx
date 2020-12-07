@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cy.pj.sys.dao.SysLogDao">
+
+    <!--提取共性SQL，使用时用include元素添加此处语句-->
+    <sql id="queryWhereId">
+        from sys_Logs
+        <where>
+            <if test="username!=null and username!=''">
+                username like concat("%",#{username},"%")
+            </if>
+        </where>
+    </sql>
+
+    <!--根据用户模糊查询日志-->
+    <select id="getRowCount"
+            resultType="Integer">
+        select count(*)
+        <include refid="queryWhereId"/>
+    </select>
+
+    <!--根据用户模糊查询日志，并分页展现-->
+    <select id="findPageObjects"
+            resultType="com.cy.pj.sys.pojo.SysLog">
+        select *
+        <include refid="queryWhereId"/>
+        order by createdTime desc
+        limit #{startIndex},#{pageSize}
+    </select>
+
+    <!--根据ids删除日志,in子查询：id in(参数1，参数2..)，
+    collection映射储存参数的容器，以前后括号为起止进行循环，item为取到的集合元素
+    循环的目的是从容器中把值一个个取出，以逗号为间隔填到in子查询语句中，
+    or表示如果前面的条件不满足则根据后面的条件查询，
+    此处表示前面的ids参数不存在时，执行一个不可能满足的条件，
+    使这条语句找不到的对象-->
+
+    <!--delete from sys_logs where id in(id1,id2,id3...);-->
+
+    <delete id="deleteObjects">
+        delete from sys_logs
+        <where>
+            <if test="ids!=null and ids.length>0">
+                id in 
+                <foreach
+                        collection="ids"
+                        open="("
+                        close=")"
+                        separator=","
+                        item="id">
+                    #{id}
+                </foreach>
+            </if>
+        </where>
+    </delete>
+
+
+    <insert id="insertObject">
+       insert into sys_logs
+       (username,operation,method,params,time,ip,createdTime)
+       values
+        (#{username},#{operation},#{method},#{params},#{time},#{ip},#{createdTime})
+    </insert>
+</mapper>

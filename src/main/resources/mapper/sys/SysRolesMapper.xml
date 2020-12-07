@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cy.pj.sys.dao.SysRolesDao">
+    <!--共性SQL-->
+    <sql id="queryWhereId">
+        <where>
+            <if test="name!=null and name!=''">
+                name like count("%",#{name},"%")
+            </if>
+        </where>
+    </sql>
+    <!--根据角色名查角色，并分页-->
+    <select id="findPageObjects"
+            resultType="com.cy.pj.sys.pojo.SysRoles">
+        select * from sys_roles
+            <include refid="queryWhereId"/>
+        limit #{startIndex},#{pageSize}
+    </select>
+
+    <!--查询角色数据的数量-->
+    <select id="getRowCount" resultType="int">
+        select count(*)from sys_roles
+        <include refid="queryWhereId"></include>
+    </select>
+
+    <!--根据id查询-->
+
+    <!--添加角色
+    useGeneratedKeys获取添加数据的主键值，
+    keyProperty把返回值赋值给指定变量-->
+    <insert id="insertObject"
+            parameterType="com.cy.pj.sys.pojo.SysRoles"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        insert into sys_roles
+        (name,note,createdTime,modifiedTime,createdUser,modifiedUser)
+        value
+        (#{name},#{note},now(),now(),#{createdUser},#{modifiedUser})
+    </insert>
+
+    <!--查询修改页面需要的name，noto，角色-菜单关系-->
+
+    <resultMap id="sysRoleMenus" type="com.cy.pj.sys.pojo.SysRoleMenus">
+        <id property="id" column="id"></id>
+        <result property="name" column="name"></result>
+        <result property="note" column="note"></result>
+        <collection property="menuIds"
+                    ofType="Integer"
+                    select="com.cy.pj.sys.dao.SysRoleMenusDao.findMenusByRoleId"
+                    column="id">
+        </collection>
+    </resultMap>
+
+    <select id="findById" resultMap="sysRoleMenus">
+        select id,name,note
+        from sys_roles
+        where id=#{id}
+    </select>
+
+
+    <!--修改角色-->
+    <insert id="updateObject"
+            parameterType="com.cy.pj.sys.pojo.SysRoles">
+        update sys_roles
+        set
+        name=#{name},
+        note=#{note},
+        modifiedTime=now(),
+        modifiedUser=#{modifiedUser}
+        where id=#{id}
+    </insert>
+
+
+</mapper>

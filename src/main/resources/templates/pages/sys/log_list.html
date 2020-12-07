@@ -1,0 +1,208 @@
+<div class="row">
+	<div class="col-xs-12">
+		<div class="box">
+			<div class="box-header">
+				<h3 class="box-title">日志管理</h3>
+				<div class="box-tools">
+					<div class="input-group input-group-sm pull-right" style="width: 50%">
+						<input type="text" name="table_search" id="searchNameId"
+							class="form-control pull-right" placeholder="用户名">
+
+						<div class="input-group-btn">
+							<button type="button" class="btn btn-default btn-search"
+									id="findLogs">
+                                <i class="fa fa-search"></i>
+							</button>
+							<button type="button" class="btn btn-default btn-delete">删除</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- /.box-header -->
+			<div class="box-body table-responsive no-padding">
+				<table class="table table-hover">
+					<thead>
+						<tr>
+						    <th><input type="checkbox" id="checkAll">全选</th>
+							<th>用户名</th>
+							<th>操作</th>
+							<th>请求方法</th>
+							<th>请求参数</th>
+							<th>IP</th>
+							<th>执行时长(ms)</th>
+						</tr>
+					</thead>
+					<tbody id="tbodyId">
+					    <tr>
+					       <td colspan="7">数据正在加载中...</td>
+					    </tr>
+					</tbody>
+				</table>
+			</div>
+			<div id="pageId" class="box-footer clearfix" dm="100">
+			  
+			</div>
+			<!-- /.box-body -->
+		</div>
+		<!-- /.box -->
+	</div>
+</div>
+<script type="text/javascript">
+
+	//onload事件,(.on)注册事件，(.load)注册访问
+	$(()=>{
+		$("#pageId").load("doPageUI",doGetObjects);
+		$(".input-group-btn")
+				.on("click",".btn-search",doQueryObjects)
+				.on("click",".btn-delete",doDeleteLogs);
+		$("#checkAll").on("change",doChangeTbodyCheckboxState);//change状态发生变化时触发事件
+		$("#tbodyId").on("change",".click-box",doChangeTheadCheckboxState);
+	});
+
+	//请求页面数据
+	function doGetObjects(){
+		$("#checkAll").prop("checked",false);
+		let url="log/doFindPageObjects/";
+		let pageCurrent=$("#pageId").data("pageCurrent");
+		if (!pageCurrent)pageCurrent=1;
+		let params={
+			"username":$("#searchNameId").val(),
+			"pageCurrent":pageCurrent,
+			"pageSize":7};  //显示日志页数
+		//console.log(params);
+		$.getJSON(url,params,(res)=>{
+			doHandleQueryResponseResult(res);
+		});
+	}
+
+	//处理返回数据
+	function doHandleQueryResponseResult(result){
+		console.log(result);
+		if (result.state==1){
+			//更新表数据
+			doSetTableBodyRows(result.data.records);
+			//更新分页按钮数据，分页数据
+			doSetPagination(result.data);
+		}else {
+			doSetTableBodyErrors(result.message);
+		}
+	}
+
+	//设置页面，添加页面信息
+	function doSetTableBodyRows(resultList) {
+		let tbody=$("#tbodyId");
+		tbody.empty();//清空
+		for (let i in resultList){
+			let tr=$("<tr></tr>");
+			let tds=doCreateTds(resultList[i]);
+			tr.append(tds);
+			tbody.append(tr);
+		}
+	}
+	//请求成功，添加表格列数据
+	function doCreateTds(i) {
+		let tds="<td>" +
+				"<input type='checkbox' " +
+				"class='click-box' " +
+				"name='cItem'" +
+				"value='"+i.id+"'>" +
+				"</td>" +
+				"<td>"+i.username+"</td>"+
+				"<td>"+i.operation+"</td>"+
+				"<td>"+i.method+"</td>"+
+				"<td>"+i.params+"</td>"+
+				"<td>"+i.ip+"</td>"+
+				"<td>"+i.time+"</td>";
+		return tds;
+	}
+	//请求失败，设置异常返回在表中展现
+	function doSetTableBodyErrors(msg) {
+		$("#tbodyId").html(`<tr><td colspan="7">${msg}</td></tr>`);
+		let page={rowCount:0,pageCount:0,pageCurrent:1};
+		doSetPagination(page);
+	}
+
+	//点击查询初始化分页信息，并发送请求
+	function doQueryObjects() {
+		//debugger;
+		$("#pageId").data("pageCurrent",1);
+		doGetObjects();
+	}
+
+	//删除日志
+	function doDeleteLogs() {
+		let idArray=doGetCheckedId();
+		if (idArray.length){
+		//console.log(idArray);
+			if(!confirm("是否将选中的数据永久删除")){
+				return;
+			}else {
+				let url="log/doDeleteLogs";
+				let params={"id":idArray.toString()};
+				console.log(params);
+				$.post(url,params,doDeleteResponse);
+			}
+		}
+	}
+
+	//获取选中的id的数组
+	function doGetCheckedId() {
+		let idArray=[];
+		$("#tbodyId input:checkbox:checked")
+				.each(function () {
+					idArray.push($(this).val());
+		});
+		return idArray;
+	}
+	//删除数据响应
+	function doDeleteResponse(res) {
+		if (res.state==1){
+			alert(res.data);
+			//因为删除会增加日志，所以这里不再返回上一页
+			//doRefreshAfterDeleteOk();
+			doGetObjects();
+		}else {
+			alert(res.message);
+		}
+	}
+
+	//删除后执行刷新（最后一页会刷新在前一页）()
+	function doRefreshAfterDeleteOk() {
+		//1.获取当前页码值,总页数,全选状态
+		let pageCurrent=$("#pageId").data("pageCurrent");
+		let pageCount=$("#pageId").data("pageCount");
+		let state=$("#checkAll").prop("checked");
+		//2.基于条件修改当前页码值
+		// (如果在全选状态当前页码大于1且为最后页，则返回上一页)
+		if(state&&pageCurrent>1&&pageCurrent==pageCount){
+			pageCurrent--;
+			$("#pageId").data("pageCurrent",pageCurrent);
+		}
+		//3.重新执行查询
+		doGetObjects();
+	}
+
+	//全选
+	function doChangeTbodyCheckboxState() {
+		let flag=$(this).prop("checked");//获取全选框状态
+		$("#tbodyId input:checkbox").prop("checked",flag);
+		//console.log(flag);
+	}
+
+	//单个选中和全选状态同步
+	function doChangeTheadCheckboxState() {
+		//获取每个CheckBox的状态，如果有false则改变全选状态
+		let flag=true;
+		$("#tbodyId input:checkbox").each(function(){
+			flag=flag&&$(this).prop("checked");
+		});
+			//console.log(flag);
+		$("#checkAll").prop("checked",flag);
+	}
+</script>
+
+
+
+
+
+
