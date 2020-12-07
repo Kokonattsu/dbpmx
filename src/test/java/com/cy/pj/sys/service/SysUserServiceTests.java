@@ -10,10 +10,13 @@ public class SysUserServiceTests {
     @Autowired
     private SysUserService sysUserService;
 
+    //添加用户
     @Test
     void testSaveObject(){
         SysUser user=new SysUser();
+        //想要添加的用户名
         user.setUsername("wangdachui");
+        //想要添加的用户密码
         user.setPassword("123456");
         Integer[] RoleIds={48,49};
         Integer row = sysUserService.saveObject(user, RoleIds);

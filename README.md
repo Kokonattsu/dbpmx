@@ -20,6 +20,7 @@
 
 1.  访问本地80端口，http：//localhost/doIndexUI
 2.  可用的用户名admin，密码123
+3.  密码不正确可以在测试类SysUserServiceTests中添加新用户
 
 
 #### 参与贡献
